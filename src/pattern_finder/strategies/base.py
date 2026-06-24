@@ -12,9 +12,10 @@ class DetectionResult:
 
     found:        success code — True if the pattern was located, else False.
                   When False, vertices is empty.
-    vertices:     pixel coordinates (x, y) of each detected extreme, ordered
-                  consistently. For the quarter-circle target this holds the
-                  3 extremes: the apex followed by the two arc endpoints.
+    vertices:     pixel coordinates (x, y) of the detected extremes. For the
+                  quarter-circle target this holds the 3 extremes (apex + the
+                  two arc endpoints); the order is not significant and which
+                  one is the apex is not labelled.
     corner_count: number of detected vertices (len(vertices)); kept for
                   convenience and to satisfy the corner-counting use case.
     """

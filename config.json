@@ -7,7 +7,16 @@
     "approx_eps_frac": 0.02,
     "min_area": 1000.0,
     "radii_ratio_min": 0.75,
-    "apex_angle_range": [50.0, 130.0]
+    "apex_angle_range": [80.0, 100.0]
   },
-  "geometric": {}
+  "geometric": {
+    "work_dim": 1000,
+    "crop_margin": 40,
+    "canny_low": 50,
+    "canny_high": 150,
+    "hull_eps_frac": 0.01,
+    "min_area": 1000.0,
+    "radii_ratio_min": 0.75,
+    "apex_angle_range": [80.0, 100.0]
+  }
 }

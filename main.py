@@ -39,10 +39,8 @@ def _print_result(result):
         print("status: NOT_FOUND")
         return
     print("status: FOUND")
-    labels = ("apex", "arc_start", "arc_end")
-    for i, (x, y) in enumerate(result.vertices):
-        label = labels[i] if i < len(labels) else "vertex_{}".format(i)
-        print("  {:<10} x={:<6} y={:<6}".format(label + ":", x, y))
+    for i, (x, y) in enumerate(result.vertices, start=1):
+        print("  extreme {}: x={:<6} y={:<6}".format(i, x, y))
 
 
 def main(argv=None):

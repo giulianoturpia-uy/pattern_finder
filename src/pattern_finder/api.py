@@ -102,10 +102,8 @@ class PatternFinder:
             from .strategies.opencv_strategy import OpenCVStrategy
             return OpenCVStrategy(**params)
         # name == STRATEGY_GEOMETRIC
-
-        raise NotImplementedError(
-            "The 'geometric' strategy is not implemented yet."
-        )
+        from .strategies.geometric_strategy import GeometricStrategy
+        return GeometricStrategy(**params)
 
     def set_strategy(self, strategy: StrategySelector) -> None:
         """Replace the detection strategy (Strategy-pattern swap).
