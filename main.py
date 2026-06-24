@@ -21,14 +21,29 @@ from __future__ import annotations
 import sys
 
 from pattern_finder import PatternFinder
-from pattern_finder.utils.image_io import ImageLoader, ImageLoadError
-from pattern_finder.utils.timing import timed_call
+from pattern_finder.utils.image_io import ImageLoadError
 
 EXIT_FOUND = 0
 EXIT_NOT_FOUND = 1
 EXIT_ERROR = 2
 
+# Hard real-time budget from the specification (applies to compute, not I/O).
+BUDGET_MS = 100.0
+
 USAGE = "usage: python main.py PATTERN IMAGE [STRATEGY]"
+
+
+def _print_result(result):
+    """Display the detection outcome: status code + the 3 extremes."""
+    if not result.found:
+        print("status: NOT_FOUND")
+        return
+    print("status: FOUND")
+    labels = ("apex", "arc_start", "arc_end")
+    for i, (x, y) in enumerate(result.vertices):
+        label = labels[i] if i < len(labels) else "vertex_{}".format(i)
+        print("  {:<10} x={:<6} y={:<6}".format(label + ":", x, y))
+
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
@@ -42,21 +57,29 @@ def main(argv=None):
     image_path = argv[1]
     strategy_name = argv[2] if len(argv) == 3 else None
 
-    # PatternFinder decides which strategy to build
+    # PatternFinder decides which strategy to build.
     try:
         finder = PatternFinder(strategy_name)
     except (ValueError, NotImplementedError) as exc:
         print("error: {}".format(exc), file=sys.stderr)
         return EXIT_ERROR
 
-    # Wrap the time measurement around the actual "find" of the pattern in the image.
+    # The API loads the files and runs detection, timing each part separately.
     try:
-        result = timed_call(finder.find, pattern_path, image_path)
+        result = finder.find(pattern_path, image_path)
     except ImageLoadError as exc:
         print("error: {}".format(exc), file=sys.stderr)
         return EXIT_ERROR
 
-    print("Pattern detected in {}:".format(image_path))
+    _print_result(result)
+
+    # Check Timings
+    within = "OK" if finder.last_compute_ms <= BUDGET_MS else "OVER BUDGET"
+    print("load:    {:.1f} ms".format(finder.last_load_ms))
+    print("compute: {:.1f} ms / {:.0f} ms budget ({})".format(
+        finder.last_compute_ms, BUDGET_MS, within))
+
+    return EXIT_FOUND if result.found else EXIT_NOT_FOUND
 
 if __name__ == "__main__":
     sys.exit(main())

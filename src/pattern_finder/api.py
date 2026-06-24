@@ -17,6 +17,7 @@ Typical use
 
 from __future__ import annotations
 
+import time
 from typing import Optional, Union
 
 from .strategies.base import DetectionResult, PatternFinderStrategy
@@ -57,15 +58,23 @@ class PatternFinder:
         self,
         strategy: StrategySelector = None,
         loader: Optional[ImageLoader] = None,
+        config_path: Optional[str] = None,
     ) -> None:
-        self._strategy = self._resolve_strategy(strategy)
+        # Where strategy parameters are read from (None -> default search).
+        self._config_path = config_path
+        self._strategy = self._resolve_strategy(strategy, config_path)
         self._loader = loader if loader is not None else ImageLoader()
+        self.last_load_ms = 0.0
+        self.last_compute_ms = 0.0
 
     @classmethod
     def _resolve_strategy(
-        cls, strategy: StrategySelector
+        cls, strategy: StrategySelector, config_path: Optional[str] = None
     ) -> PatternFinderStrategy:
         """Turn a name (or instance, or None) into a concrete strategy.
+
+        When built by name, the strategy's parameters are read from the config
+        file and passed to its constructor; anything not configured falls back to defaults.
 
         Raises
         ------
@@ -86,10 +95,12 @@ class PatternFinder:
                 )
             )
 
+        from .config import strategy_params
+        params = strategy_params(name, config_path or "")
+
         if name == STRATEGY_OPENCV:
-            raise NotImplementedError(
-                "The 'opencv' strategy is not implemented yet."
-            )
+            from .strategies.opencv_strategy import OpenCVStrategy
+            return OpenCVStrategy(**params)
         # name == STRATEGY_GEOMETRIC
 
         raise NotImplementedError(
@@ -101,7 +112,7 @@ class PatternFinder:
 
         Accepts a name or a concrete instance, same as the constructor.
         """
-        self._strategy = self._resolve_strategy(strategy)
+        self._strategy = self._resolve_strategy(strategy, self._config_path)
 
     @property
     def strategy(self) -> PatternFinderStrategy:
@@ -131,7 +142,18 @@ class PatternFinder:
         ------
         ImageLoadError
             If either file cannot be loaded.
+
+        Notes
+        -----
+        After the call, ``last_load_ms`` and ``last_compute_ms`` hold the time
+        spent decoding the files and running detection, respectively.
         """
+        start = time.perf_counter()
         pattern_arr = self._loader(pattern_path)
         image_arr = self._loader(image_path)
-        return self._strategy.find(pattern_arr, image_arr)
+        self.last_load_ms = (time.perf_counter() - start) * 1000.0
+
+        start = time.perf_counter()
+        result = self._strategy.find(pattern_arr, image_arr)
+        self.last_compute_ms = (time.perf_counter() - start) * 1000.0
+        return result
