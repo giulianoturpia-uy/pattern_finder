@@ -135,12 +135,58 @@ The defaults (in `config.json`) were derived empirically against the sample
   robustly and the exact thresholds are not critical here.
 - **`crop_margin` (40).** Chosen so the full shape plus Canny's edge halo sits
   comfortably inside the refine crop, with room to spare around the target.
-- **`radii_ratio_min` (0.75) and `apex_angle_range` (50–130°).** Derived from
-  the geometry of a 90° sector — equal radii and a 90° apex — then loosened into
-  tolerant windows so rotation and pixel discretisation don't cause false
-  negatives, while still rejecting non-sector blobs (e.g. a full circle).
+- **`radii_ratio_min` (0.75) and `apex_angle_range` (80–100°).** Derived from
+  the geometry of a 90° sector — equal radii and a 90° apex. Because the apex
+  angle is intrinsic to the shape (rotation does not change it), the window is
+  tight at 90° ± 10°: enough to absorb pixel discretisation, tight enough to
+  reject non-sector blobs (e.g. the 60°/60°/60° triangle a full circle yields).
 - **`min_area` (1000).** Expressed in **full-resolution** px². The downscaled
   locate-stage area is normalised back to full resolution before the check, so
   the threshold is a real-image size and does not need re-tuning when
   `work_dim` changes. The sample target is ~52 000 px², so 1000 comfortably
   rejects outliers while accepting the target.
+
+## 4. Testing
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+Two suites:
+
+- **Visual tests** (`tests/test_visual.py`) — run both strategies on synthetic
+  quarter circles (several rotations), on a full circle (must be rejected), and
+  on the sample images. Each test makes a real assertion *and* saves an
+  annotated PNG to `tests/output/` so the detection can be manually checked. The
+  output directory is git-ignored.
+- **Resource tests** (`tests/test_resources.py`) — see the next section.
+
+## 5. Resource Budget & Deployment
+
+The target is a low-end device (≤4 GB RAM, ARMv7 Cortex, 100 ms per search).
+We can run some of the constraints here, without a proper device emulator (QEMU, for instance). Given this, we can do the following:
+
+- **Memory — tested.** `tests/test_resources.py` runs a detection in a fresh
+  subprocess and reads its peak RSS (actual physical memory) via `getrusage`,
+  asserting it stays under 1 GB.
+
+  A hard `RLIMIT_AS` cap is deliberately **not** used: it limits *virtual*
+  address space, and numpy's multithreaded BLAS reserves large virtual regions
+  unrelated to real RAM use, so it fails for the wrong reason. Peak RSS is the
+  honest metric.
+
+- **Compute time — regression guard only.** The same test asserts compute stays
+  under 100 ms, but this is a *guard*, not a guarantee.
+
+- **Thread pinning (deployment tip).** On a few-core CPU, numpy/OpenCV spawning
+  one BLAS thread per core can oversubscribe and *slow things down*. Pin the
+  math libraries to a single thread on the device:
+
+  ```bash
+  export OMP_NUM_THREADS=1
+  export OPENBLAS_NUM_THREADS=1
+  export MKL_NUM_THREADS=1
+  ```
+
+  The resource tests set these for the same reason.

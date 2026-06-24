@@ -220,3 +220,5 @@ __marimo__/
 # .bmp and .tif files
 *.bmp
 *.tif
+# Visual test output (generated, not committed)
+tests/output/
