@@ -1,20 +1,29 @@
 from __future__ import annotations
 
-import abc
 from dataclasses import dataclass
 from typing import Tuple
 
+import abc
+import numpy as np
 
 @dataclass(frozen=True)
 class DetectionResult:
     """Outcome of a pattern-finding run.
 
-    corner_count: number of geometric vertices of the detected pattern.
-    vertices:     pixel coordinates (x, y) of each detected vertex,
-                  ordered consistently.
+    found:        success code — True if the pattern was located, else False.
+                  When False, vertices is empty.
+    vertices:     pixel coordinates (x, y) of each detected extreme, ordered
+                  consistently. For the quarter-circle target this holds the
+                  3 extremes: the apex followed by the two arc endpoints.
+    corner_count: number of detected vertices (len(vertices)); kept for
+                  convenience and to satisfy the corner-counting use case.
     """
-    corner_count: int
+    found: bool
     vertices: Tuple[Tuple[int, int], ...] = ()
+
+    @property
+    def corner_count(self) -> int:
+        return len(self.vertices)
 
 
 class PatternFinderStrategy(abc.ABC):
@@ -38,10 +47,11 @@ class PatternFinderStrategy(abc.ABC):
         pattern:
             Grayscale uint8 array of the template image (from .bmp).
         image:
-            Grayscale uint8 array of the full image image (from .tif).
+            Grayscale uint8 array of the search image (from .tif).
 
         Returns
         -------
         DetectionResult
-            Always populated; strategies must guarantee corner_count >= 0.
+            found=True with the 3 extremes on success; found=False with an
+            empty vertices tuple when the pattern is not located.
         """

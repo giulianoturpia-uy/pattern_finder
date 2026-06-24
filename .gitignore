@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# .bmp and .tif files
+*.bmp
+*.tif

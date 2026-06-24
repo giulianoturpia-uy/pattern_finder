@@ -6,6 +6,8 @@ It includes a basic API for uploa is coded using python, mainly targeting Linux-
 The target devices are resource-constrained(4GB RAM at most) and are relatively old. For this reason, the Python version we target is relatively "outdated" given the versions available at the time of writing this.
 If the device supports newer versions of Python, please use a virtual environment targeting your desired version (for instance, Ubuntu 22.04.5 LTS utilizes Python 3.10.12).
 
+We assume the images are mostly mono-colored, as well as the pattern to be found in the image.
+
 ## 1. Installation
 
 ### 1.0. Prerequisites (system packages)
@@ -50,7 +52,8 @@ available wheels, `opencv-python-headless` is the lightest: it strips the GUI
 `Canny`, `findContours` and `approxPolyDP`, all in the `imgproc` module. That
 is why it is the dependency pinned in `setup.py`.
 
-## 2. Design
+## 2. Code Flow
 
+## 3. Design
 
-## 3. Edge Detection, Algorithm
+### 3.1. Edge Detection, Algorithm
