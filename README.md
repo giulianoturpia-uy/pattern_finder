@@ -43,7 +43,7 @@ With dev dependencies (pytest, coverage):
 pip install -e ".[dev]"
 ```
 
-### 1.4. A note on OpenCV
+### 1.3. A note on OpenCV
 
 OpenCV is published on PyPI only as monolithic wheels — every wheel contains
 all modules; pip cannot install individual ones (e.g. just `imgproc`). Of the

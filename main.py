@@ -22,6 +22,7 @@ import sys
 
 from pattern_finder import PatternFinder
 from pattern_finder.utils.image_io import ImageLoader, ImageLoadError
+from pattern_finder.utils.timing import timed_call
 
 EXIT_FOUND = 0
 EXIT_NOT_FOUND = 1
@@ -41,29 +42,16 @@ def main(argv=None):
     image_path = argv[1]
     strategy_name = argv[2] if len(argv) == 3 else None
 
-    # Cheap header-only check to confirm both files are readable, without
-    # decoding the (potentially huge) pixel data twice — find() does the
-    # real load below.
-    loader = ImageLoader()
+    # PatternFinder decides which strategy to build
     try:
-        pw, ph = loader.image_dimensions(pattern_path)
-        iw, ih = loader.image_dimensions(image_path)
-    except ImageLoadError as exc:
-        print("error: {}".format(exc), file=sys.stderr)
-        return EXIT_ERROR
-    print("pattern {}: {}x{} (OK)".format(pattern_path, pw, ph))
-    print("image   {}: {}x{} (OK)".format(image_path, iw, ih))
-
-    # The context decides which strategy to build; we just report any problem.
-    try:
-        finder = PatternFinder(strategy_name, loader=loader)
+        finder = PatternFinder(strategy_name)
     except (ValueError, NotImplementedError) as exc:
         print("error: {}".format(exc), file=sys.stderr)
         return EXIT_ERROR
 
-    # The API takes the file paths and does the loading/conversion itself.
+    # Wrap the time measurement around the actual "find" of the pattern in the image.
     try:
-        result = finder.find(pattern_path, image_path)
+        result = timed_call(finder.find, pattern_path, image_path)
     except ImageLoadError as exc:
         print("error: {}".format(exc), file=sys.stderr)
         return EXIT_ERROR

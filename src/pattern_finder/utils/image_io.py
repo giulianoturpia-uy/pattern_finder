@@ -92,5 +92,3 @@ class ImageLoader:
             raise ImageLoadError(
                 "Failed to load image {}: {}".format(path, exc)
             ) from exc
-
-
